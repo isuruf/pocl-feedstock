@@ -45,15 +45,13 @@ requirements:
     - clangdev =={{ llvm_version }}
 
 test:
-  #requires:
-    #- pyopencl
-    #- curl
-    #- osx-pocl-opencl  # [osx]
-
+  requires:
+    - pyopencl
+    - curl
   commands:
     - test -f $PREFIX/lib/libpocl${SHLIB_EXT}     # [unix]
-    #- curl -O https://raw.githubusercontent.com/inducer/pyopencl/master/examples/demo.py
-    #- python demo.py
+    - curl -O https://raw.githubusercontent.com/inducer/pyopencl/master/examples/demo.py
+    - python demo.py
 
 about:
   home: http://portablecl.org/
