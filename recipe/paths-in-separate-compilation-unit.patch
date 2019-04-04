@@ -1,4 +1,4 @@
-commit 122905b22ca9189237d10f774968815e3d456be8
+commit a763506c5ff747e59647bb6560d11f0556fda399
 Author: Isuru Fernando <isuruf@gmail.com>
 Date:   Tue Apr 2 13:58:20 2019 -0500
 
@@ -55,7 +55,7 @@ index 84d94968..27e6b9e2 100644
  
  #cmakedefine POCL_ASSERTS_BUILD
 diff --git a/lib/CL/pocl_llvm_build.cc b/lib/CL/pocl_llvm_build.cc
-index f0b897f4..ec64f5d0 100644
+index f0b897f4..5e2a1c1b 100644
 --- a/lib/CL/pocl_llvm_build.cc
 +++ b/lib/CL/pocl_llvm_build.cc
 @@ -68,6 +68,15 @@ IGNORE_COMPILER_WARNING("-Wstrict-aliasing")
@@ -74,7 +74,7 @@ index f0b897f4..ec64f5d0 100644
  using namespace clang;
  using namespace llvm;
  
-@@ -172,6 +181,21 @@ static void get_build_log(cl_program program,
+@@ -172,6 +181,23 @@ static void get_build_log(cl_program program,
  
  static llvm::Module *getKernelLibrary(cl_device_id device);
  
@@ -84,8 +84,10 @@ index f0b897f4..ec64f5d0 100644
 +    if (dladdr((void*)get_pocl_private_data_dir, &info)) {
 +        char const * soname = info.dli_fname;
 +        std::string result = std::string(soname);
++        size_t last_slash = result.rfind('/');
++        result = result.substr(0, last_slash+1);
 +        if (result.size() > 0) {
-+            result += "/../" POCL_INSTALL_PRIVATE_DATADIR_REL;
++            result += POCL_INSTALL_PRIVATE_DATADIR_REL;
 +            return result;
 +        }
 +    }
@@ -96,28 +98,36 @@ index f0b897f4..ec64f5d0 100644
  int pocl_llvm_build_program(cl_program program,
                              unsigned device_i,
                              const char *user_options_cstr,
-@@ -428,7 +452,7 @@ int pocl_llvm_build_program(cl_program program,
+@@ -420,15 +446,18 @@ int pocl_llvm_build_program(cl_program program,
+   std::string KernelH;
+   std::string BuiltinRenamesH;
+   std::string PoclTypesH;
++  std::string ClangResourceDir;
+ 
+ #ifdef ENABLE_POCL_BUILDING
+   if (pocl_get_bool_option("POCL_BUILDING", 0)) {
+     IncludeRoot = SRCDIR;
++    ClangResourceDir = CLANG_RESOURCE_DIR;
+ #else
    if (0) {
  #endif
    } else {
 -    IncludeRoot = POCL_INSTALL_PRIVATE_DATADIR;
 +    IncludeRoot = get_pocl_private_data_dir();
++    ClangResourceDir = IncludeRoot;
    }
    KernelH = IncludeRoot + "/include/_kernel.h";
    BuiltinRenamesH = IncludeRoot + "/include/_builtin_renames.h";
-@@ -438,7 +462,11 @@ int pocl_llvm_build_program(cl_program program,
+@@ -438,7 +467,7 @@ int pocl_llvm_build_program(cl_program program,
    po.Includes.push_back(BuiltinRenamesH);
  #ifndef LLVM_OLDER_THAN_4_0
    // Use Clang's opencl-c.h header.
-+#if defined(ENABLE_POCL_RELOCATION)
-+  po.Includes.push_back(IncludeRoot + "/include/opencl-c.h");
-+#else
-   po.Includes.push_back(CLANG_RESOURCE_DIR "/include/opencl-c.h");
-+#endif
+-  po.Includes.push_back(CLANG_RESOURCE_DIR "/include/opencl-c.h");
++  po.Includes.push_back(ClangResourceDir + "/include/opencl-c.h");
  #endif
    po.Includes.push_back(KernelH);
    clang::TargetOptions &ta = pocl_build.getTargetOpts();
-@@ -837,7 +865,7 @@ static llvm::Module* getKernelLibrary(cl_device_id device)
+@@ -837,7 +866,7 @@ static llvm::Module* getKernelLibrary(cl_device_id device)
      kernellib += subdir;
    } else // POCL_BUILDING == 0, use install dir
  #endif
