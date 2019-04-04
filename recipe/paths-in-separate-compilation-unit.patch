@@ -229,7 +229,7 @@ index 17e07acc..c0b6b4f8 100644
 2.20.1
 
 
-From e15df4550cc750b3fa825b127100240a359dda9d Mon Sep 17 00:00:00 2001
+From 97767f777d304bae0e4a38cf2363dbecca7c7ea4 Mon Sep 17 00:00:00 2001
 From: Isuru Fernando <isuruf@gmail.com>
 Date: Thu, 4 Apr 2019 00:39:05 -0500
 Subject: [PATCH 4/4] Use LLD libraries
@@ -242,25 +242,25 @@ Subject: [PATCH 4/4] Use LLD libraries
  4 files changed, 72 insertions(+), 20 deletions(-)
 
 diff --git a/cmake/LLVM.cmake b/cmake/LLVM.cmake
-index 355b8355..ebe28828 100644
+index 355b8355..ba432b07 100644
 --- a/cmake/LLVM.cmake
 +++ b/cmake/LLVM.cmake
-@@ -235,6 +235,15 @@ foreach(LIBNAME ${CLANG_LIBNAMES})
-   endif()
- endforeach()
+@@ -227,6 +227,15 @@ set(CLANG_LIBNAMES clangCodeGen clangFrontendTool clangFrontend clangDriver clan
+     clangStaticAnalyzerFrontend clangStaticAnalyzerCheckers
+     clangStaticAnalyzerCore clangAnalysis clangEdit clangAST clangLex clangBasic)
  
++
 +if (ENABLE_POCL_RELOCATION)
-+    set(CLANG_LIBNAMES ${CLANG_LIBNAMES} lldElf)
 +    if(LLVM_OLDER_THAN_6_0)
-+        set(CLANG_LIBNAMES ${CLANG_LIBNAMES} lldConfig lldCore)
++        set(CLANG_LIBNAMES lldELF lldConfig lldCore ${CLANG_LIBNAMES})
 +    else()
-+        set(CLANG_LIBNAMES ${CLANG_LIBNAMES} lldCommon)
++        set(CLANG_LIBNAMES lldELF lldCommon ${CLANG_LIBNAMES})
 +    endif()
 +endif()
 +
- # With Visual Studio llvm-config gives invalid list of static libs (libXXXX.a instead of XXXX.lib)
- # we extract the pure names (LLVMLTO, LLVMMipsDesc etc) and let find_library do its job
- foreach(LIBFLAG ${LLVM_LIBS})
+ foreach(LIBNAME ${CLANG_LIBNAMES})
+   find_library(C_LIBFILE_${LIBNAME} NAMES "${LIBNAME}" HINTS "${LLVM_LIBDIR}")
+   list(APPEND CLANG_LIBFILES "${C_LIBFILE_${LIBNAME}}")
 diff --git a/lib/CL/devices/common.c b/lib/CL/devices/common.c
 index 371bbfeb..d3958402 100644
 --- a/lib/CL/devices/common.c
@@ -328,7 +328,7 @@ index 3a9e97ab..ab1ef9db 100644
  #pragma GCC visibility pop
  #endif
 diff --git a/lib/CL/pocl_llvm_build.cc b/lib/CL/pocl_llvm_build.cc
-index 5e2a1c1b..efdeb5f6 100644
+index 5e2a1c1b..99c3b421 100644
 --- a/lib/CL/pocl_llvm_build.cc
 +++ b/lib/CL/pocl_llvm_build.cc
 @@ -53,6 +53,20 @@ IGNORE_COMPILER_WARNING("-Wstrict-aliasing")
@@ -342,7 +342,7 @@ index 5e2a1c1b..efdeb5f6 100644
 +#define _DARWIN_C_SOURCE
 +#include <dlfcn.h>
 +#endif
-+#ifndef LLVM_OLDER_THAN_7_0
++#ifndef LLVM_OLDER_THAN_6_0
 +#include <lld/Common/Driver.h>
 +#else
 +#include <lld/Driver/Driver.h>
