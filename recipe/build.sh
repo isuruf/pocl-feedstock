@@ -37,6 +37,7 @@ elif [[ "$target_platform" == linux-ppc64le ]]; then
 fi
 
 #export OCL_ICD_DEBUG=7
+export POCL_DEBUG=1
 
 cmake \
   -D CMAKE_BUILD_TYPE="Release" \
